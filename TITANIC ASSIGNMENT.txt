@@ -1,4 +1,4 @@
-data = spark.read.csv('titanic.csv', inferSchema=True, header=True)
+data = spark.read.csv('titanic.csv', inferSchema=True, header=True) .
 
 data = data.select(['Survived', 'Pclass', 'Gender', 'Age', 'SibSp', 'Parch', 'Fare'])
 
