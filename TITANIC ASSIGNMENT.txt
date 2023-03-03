@@ -1,0 +1,45 @@
+data = spark.read.csv('titanic.csv', inferSchema=True, header=True)
+
+data = data.select(['Survived', 'Pclass', 'Gender', 'Age', 'SibSp', 'Parch', 'Fare'])
+
+from pyspark.ml.feature import Imputer
+imputer = Imputer(strategy='mean', inputCols=['Age'], outputCols=['AgeImputed'])
+imputer_model = imputer.fit(data)
+data = imputer_model.transform(data)
+
+
+from pyspark.ml.feature import StringIndexer
+gender_indexer = StringIndexer(inputCol='Gender', outputCol='GenderIndexed')
+gender_indexer_model = gender_indexer.fit(data)
+data = gender_indexer_model.transform(data)
+
+from pyspark.ml.feature import VectorAssembler
+assembler = VectorAssembler(inputCols=['Pclass', 'SibSp', 'Parch', 'Fare', 'AgeImputed', 'GenderIndexed'], outputCol='features')
+data = assembler.transform(data)
+
+
+from pyspark.ml.classification import RandomForestClassifier
+algo = RandomForestClassifier(featuresCol='features', labelCol='Survived')
+model = algo.fit(data)
+
+
+predictions = model.transform(data)
+
+
+
+
+
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+evaluator = BinaryClassificationEvaluator(labelCol='Survived', metricName='areaUnderROC')
+
+evaluator.evaluate(predictions)
+
+
+y_true = predictions.select(['Survived']).collect()
+y_pred = predictions.select(['prediction']).collect()
+
+
+from sklearn.metrics import classification_report, confusion_matrix
+
+
+print(classification_report(y_true, y_pred))
